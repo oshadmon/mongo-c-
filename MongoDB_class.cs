@@ -5,6 +5,7 @@
  */
 
 using System;
+using System.Collections.Generic; // Add this using statement for List<>
 using MongoDB.Driver; // MongoDB driver 
 
 /**
@@ -17,22 +18,30 @@ static string CONN_INFO = "mongodb://localhost:27017"
 public class MongoDB{
     public static IMongoDatabase  ConnectMongDB(string conn_info, string db_name){
         /**
-         * Connect to MongoDB based on CONN_INFO and database
-         * 
+         * Connect to MongoDB based on CONN_INFO and database name
          * :args:
          *      conn_info:str - MongoDB connection information
          *      db_name:str - database to store content in
          * :params: 
+         *      conn:MongoClient - MongoDB client 
          *      cur:IMongoDatabase - cursor for communicating with MongoDB 
          * :return: 
-         *      cur
+         *      cursor for MongoDB
          */
+        IMongoDatabase cur = null;
 
-        // connect MongDB connection 
-        var client = new MongoClient(conn_info);
+        
+        try { 
+            // connect MongDB connection 
+            var client = new MongoClient(conn_info);
 
-        // create cursor 
-        var cur = client.GetDatabase(db_name);
+            // create cursor for MongoDB connection
+            cur = client.GetDatabase(db_name);
+        } catch (Exception ex){
+            Console.WriteLine(f"Failed create a connection  to MongoDB (Error: {ex})");
+        }
+
+            return cur; 
     }
 
     private static bool IsCollection(IMongoDatabase, cur, string collection_name){
@@ -51,11 +60,12 @@ public class MongoDB{
         
         var bool is_collection = false;
         List<string> collections = null;
+
         try {
             collections = database.ListCollectionNames().ToList(); // list of all collections 
         }
         catch (Exception ex) {
-            Console.WriteLine(f"Failed to get a list of collections (Error: {ex})")
+            Console.WriteLine(f"Failed to get a list of collections (Error: {ex})");
         } finally {
             if (collections != null && collectionNames.Contains(collection_name)) { // check whether collection exists 
                 is_collection = true;
@@ -83,7 +93,7 @@ public class MongoDB{
          */
         bool is_collection = IsCollection(cur = cur, collection_name = colllection_name); 
         
-        if (!is_collection){ // if collection doesn't exist returns null (need to create collection / file) 
+        if (! is_collection){ // if collection doesn't exist returns null (need to create collection / file) 
             return null; 
         }
         
@@ -96,7 +106,7 @@ public class MongoDB{
 
     }
 
-    public static bool CreateCollection(IMongoDatabase cur, string colllection_name){
+    public static IMongoCollection<BsonDocument> CreateCollection(IMongoDatabase cur, IMongoDatabase cur, string colllection_name){
         /**
          * Create collection for data to be stored in
          * 
@@ -108,14 +118,21 @@ public class MongoDB{
          * :return: 
          *      status
          */
-        bool status = false;
 
-        return status;
+        var collection = null;
+
+        try{
+            collection = cur.CreateCollection(collection_name)
+        } catch(Exception ex) {
+            Console.WriteLine(f"Failed create a new collection - {collection_name) (Error: {ex})");
+        }
+
+        return collection;
 
     }
 
 
-    public static bool InsertData(IMongoDatabase cur, string colllection_name, string file_name, byte file_content){
+    public static bool InsertData(IMongoCollection collection, string file_name, byte file_content){
         /**
          * Write content into MongoDB 
          * :sample row:
@@ -127,7 +144,7 @@ public class MongoDB{
          *      file_content:bytes - actual file blob
          * :args: 
          *      cur:IMongoDatabase - cursor for communicating with MongoDB
-         *      collection_name:str - collection ("table") to look into
+         *      collection:str - collection ("table") to look into
          *      file_name:str - file name 
          *      file_conent:bytes - file content
          * :params: 
@@ -137,15 +154,32 @@ public class MongoDB{
          * :return: 
          *      status
          */
-        bool status = false;
+        bool status = true;
         string creator = Environment.UserName; // windows user 
         DateTime timestamp = DateTime.Now; // current timestamp 
-        
+
+        var document = new BsonDocument { // create "row" for container 
+            { "create_ts", timestamp },
+            { "update_ts", timestamp },
+            { "name", file_content }
+            { "creator", creator },
+            { "updator", creator },
+            { "content", file_content }
+
+        };
+
+        try{ // write row to container 
+            collection.InsertOne(document);
+        }catch(Exception ex){
+            Console.WriteLine(f"Failed write content into container (Error: {ex})");
+            status = true; 
+        } 
+
         return status; 
 
     }
 
-    public static bool UpdateData(IMongoDatabase cur, BsonDocument content){
+    public static bool UpdateData(IMongoCollection collection, string file_name, BsonDocument content){
         /**
          * Update MongoDB row with new content
          * :args: 
@@ -162,7 +196,11 @@ public class MongoDB{
         DateTime timestamp = DateTime.Now; // current timestamp (used for update row) 
 
         return status;
-
-
     }
 }
+
+/**
+ * Main
+ *  1. connect to MongoDB 
+ *  2. CreateCollection (This will create and/or connect to collection)
+ */ 
