@@ -30,6 +30,7 @@ public class MongoDB{
          */
         IMongoDatabase cur = null;
 
+<<<<<<< HEAD
         
         try { 
             // connect MongDB connection 
@@ -42,6 +43,21 @@ public class MongoDB{
         }
 
             return cur; 
+=======
+        var client = null; 
+        var cur = null ; 
+        try{ 
+            // connect MongDB connection 
+            client = new MongoClient(conn_info);
+            // create cursor 
+            cur = client.GetDatabase(db_name);
+        }catch  (Exception ex) {
+            Console.WriteLine($"Failed to set connection to MongoDB (Error: {ex})")
+        } 
+        
+        return cur; 
+        
+>>>>>>> 17a78ce9e503ccf4113de73b2b28463fac2ea669
     }
 
     private static bool IsCollection(IMongoDatabase, cur, string collection_name){
@@ -201,9 +217,12 @@ public class MongoDB{
         return status;
     }
 }
+\
 
 /**
  * Main
  *  1. connect to MongoDB 
  *  2. CreateCollection (This will create and/or connect to collection)
  */ 
+=======
+>>>>>>> 17a78ce9e503ccf4113de73b2b28463fac2ea669
