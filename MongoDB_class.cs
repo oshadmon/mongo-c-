@@ -28,11 +28,19 @@ public class MongoDB{
          *      cur
          */
 
-        // connect MongDB connection 
-        var client = new MongoClient(conn_info);
-
-        // create cursor 
-        var cur = client.GetDatabase(db_name);
+        var client = null; 
+        var cur = null ; 
+        try{ 
+            // connect MongDB connection 
+            client = new MongoClient(conn_info);
+            // create cursor 
+            cur = client.GetDatabase(db_name);
+        }catch  (Exception ex) {
+            Console.WriteLine($"Failed to set connection to MongoDB (Error: {ex})")
+        } 
+        
+        return cur; 
+        
     }
 
     private static bool IsCollection(IMongoDatabase, cur, string collection_name){
@@ -55,7 +63,7 @@ public class MongoDB{
             collections = database.ListCollectionNames().ToList(); // list of all collections 
         }
         catch (Exception ex) {
-            Console.WriteLine(f"Failed to get a list of collections (Error: {ex})")
+            Console.WriteLine($"Failed to get a list of collections (Error: {ex})")
         } finally {
             if (collections != null && collectionNames.Contains(collection_name)) { // check whether collection exists 
                 is_collection = true;
