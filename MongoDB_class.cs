@@ -100,9 +100,12 @@ public class MongoDB{
         // create a filter criteria based on column_name (ex. file_name) and correspondig value 
         var filter = Builders<BsonDocument>.Filter.Eq(column_name, column_value);
 
-        // return "row" based on filter, if not found returns null
-        return collection.Find(filter).FirstOrDefault(); 
+        // Create a filter criteria based on column_name (ex. file_name) and corresponding value 
+        var filter = Builders<BsonDocument>.Filter.Eq(column_name, column_value);
 
+        // Get the document (row) based on the filter; if not found, return null
+        var collection = cur.GetCollection<BsonDocument>(collection_name);
+        return collection.Find(filter).FirstOrDefault();
 
     }
 
